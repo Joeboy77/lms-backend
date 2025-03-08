@@ -8,6 +8,8 @@ const {
   getQuizById,
   submitQuiz,
   getQuizResult,
+  getProfile,
+  updateProfile,
 } = require("../controllers/studentController");
 
 const { authenticateToken } = require('../middlewares/authmiddleware');
@@ -23,4 +25,6 @@ router.post("/submit-assignment", authenticateToken, submitAssignment);
 router.get("/quiz/:id", authenticateToken, getQuizById);
 router.post("/submit-quiz/:id", authenticateToken, submitQuiz);
 router.get("/quiz-result/:id", authenticateToken, getQuizResult);
+router.get('/profile', authenticateToken, getProfile);
+router.put('/profile', authenticateToken, updateProfile);
 module.exports = router;

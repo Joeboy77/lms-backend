@@ -402,6 +402,37 @@ const getSystemStats = async (req, res) => {
   }
 };
 
+const getProfile = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const result = await pool.query(
+      'SELECT first_name, last_name, email, username FROM students WHERE id = $1',
+      [studentId]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const { first_name, last_name, email } = req.body;
+    
+    await pool.query(
+      'UPDATE students SET first_name = $1, last_name = $2, email = $3 WHERE id = $4',
+      [first_name, last_name, email, studentId]
+    );
+    
+    res.json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   createQuizTables,
   getStudentDashboard,
@@ -414,5 +445,7 @@ module.exports = {
   getQuizResult,
   getAllStudents,
   getStudentDetails,
-  getSystemStats
+  getSystemStats,
+  getProfile,
+  updateProfile
 };
