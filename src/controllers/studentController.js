@@ -436,18 +436,28 @@ const updateProfile = async (req, res) => {
 const updateProfilePicture = async (req, res) => {
   try {
     const studentId = req.user.id;
-    const profile_picture = req.file ? req.file.path : null;
-
-    if (!profile_picture) {
+    
+    // Check if file was uploaded
+    if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
+
+    // Get the Cloudinary URL from the uploaded file
+    const profile_picture = req.file.path;
 
     const result = await pool.query(
       'UPDATE students SET profile_picture = $1 WHERE id = $2 RETURNING profile_picture',
       [profile_picture, studentId]
     );
 
-    res.json({ profile_picture: result.rows[0].profile_picture });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    res.json({ 
+      message: 'Profile picture updated successfully',
+      profile_picture: result.rows[0].profile_picture 
+    });
   } catch (error) {
     console.error('Error updating profile picture:', error);
     res.status(500).json({ message: 'Server error' });
