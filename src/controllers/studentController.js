@@ -433,6 +433,27 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const updateProfilePicture = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const profile_picture = req.file ? req.file.path : null;
+
+    if (!profile_picture) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const result = await pool.query(
+      'UPDATE students SET profile_picture = $1 WHERE id = $2 RETURNING profile_picture',
+      [profile_picture, studentId]
+    );
+
+    res.json({ profile_picture: result.rows[0].profile_picture });
+  } catch (error) {
+    console.error('Error updating profile picture:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   createQuizTables,
   getStudentDashboard,
@@ -447,5 +468,6 @@ module.exports = {
   getStudentDetails,
   getSystemStats,
   getProfile,
-  updateProfile
+  updateProfile,
+  updateProfilePicture
 };

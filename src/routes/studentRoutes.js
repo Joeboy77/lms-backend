@@ -10,9 +10,11 @@ const {
   getQuizResult,
   getProfile,
   updateProfile,
+  updateProfilePicture,
 } = require("../controllers/studentController");
 
 const { authenticateToken } = require('../middlewares/authmiddleware');
+const profilePicUpload = require('../middlewares/profilePicUpload');
 
 const router = express.Router();
 
@@ -27,4 +29,5 @@ router.post("/submit-quiz/:id", authenticateToken, submitQuiz);
 router.get("/quiz-result/:id", authenticateToken, getQuizResult);
 router.get('/profile', authenticateToken, getProfile);
 router.put('/profile', authenticateToken, updateProfile);
+router.put('/profile-picture', authenticateToken, profilePicUpload.single('profile_picture'), updateProfilePicture);
 module.exports = router;
