@@ -271,6 +271,19 @@ const submitQuiz = async (req, res) => {
 
         const score = (correctAnswers / totalQuestions) * 100;
 
+        const questionDetails = questionsResult.rows.map(question => ({
+            question: question.question_text,
+            type: question.question_type,
+            studentAnswer: answers[question.id] || '',
+            correctAnswer: Array.isArray(question.correct_answers) ? 
+                question.correct_answers[0] : 
+                question.correct_answers,
+            isCorrect: Array.isArray(question.correct_answers) && 
+                question.correct_answers.some(ans => 
+                    ans.toLowerCase().trim() === (answers[question.id] || '').toLowerCase().trim()
+                )
+        }));
+
         // Save quiz result with correct schema
         await pool.query(
             "INSERT INTO quiz_results (student_id, quiz_id, score) VALUES ($1, $2, $3)",
@@ -281,7 +294,8 @@ const submitQuiz = async (req, res) => {
             message: "Quiz submitted successfully", 
             score,
             correctAnswers,
-            totalQuestions
+            totalQuestions,
+            questionDetails
         });
     } catch (error) {
         console.error("Error submitting quiz:", error);
