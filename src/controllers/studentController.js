@@ -406,7 +406,7 @@ const getProfile = async (req, res) => {
   try {
     const studentId = req.user.id;
     const result = await pool.query(
-      'SELECT first_name, last_name, email, username FROM students WHERE id = $1',
+      'SELECT first_name, last_name, email, username, profile_picture FROM students WHERE id = $1',
       [studentId]
     );
     res.json(result.rows[0]);
