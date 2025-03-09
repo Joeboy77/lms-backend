@@ -298,7 +298,17 @@ const submitQuiz = async (req, res) => {
         await pool.query(
             `INSERT INTO quiz_results 
             (student_id, quiz_id, score, correct_answers, total_questions, forced_submission) 
-            VALUES ($1, $2, $3, $4, $5, $6)`,
+            SELECT $1, $2, $3, $4, $5, $6
+            WHERE EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'quiz_results' AND column_name = 'forced_submission'
+            )
+            UNION ALL
+            SELECT $1, $2, $3, $4, $5, NULL
+            WHERE NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'quiz_results' AND column_name = 'forced_submission'
+            )`,
             [
                 studentId, 
                 id, 
