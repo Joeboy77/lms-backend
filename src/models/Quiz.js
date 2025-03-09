@@ -32,7 +32,8 @@ const createQuizTables = async () => {
       score DECIMAL,
       correct_answers INTEGER,
       total_questions INTEGER,
-      submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      forced_submission BOOLEAN DEFAULT false
     );
   `;
 

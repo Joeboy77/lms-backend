@@ -240,17 +240,31 @@ const submitQuiz = async (req, res) => {
         const { answers, forcedSubmission } = req.body;
         const studentId = req.user.id;
 
+        // Check if student has already submitted this quiz
+        const existingResult = await pool.query(
+            "SELECT * FROM quiz_results WHERE student_id = $1 AND quiz_id = $2",
+            [studentId, id]
+        );
+
+        if (existingResult.rows.length > 0) {
+            return res.status(400).json({ 
+                message: "You have already submitted this quiz",
+                result: existingResult.rows[0]
+            });
+        }
+
         // Fetch quiz questions with correct answers
         const questionsResult = await pool.query(
-            "SELECT id, question_type, correct_answers FROM questions WHERE quiz_id = $1",
+            "SELECT id, question_text, question_type, correct_answers FROM questions WHERE quiz_id = $1",
             [id]
         );
 
         let correctAnswers = 0;
         const totalQuestions = questionsResult.rows.length;
         
-        questionsResult.rows.forEach(question => {
-            const studentAnswer = answers[question.id];
+        // Calculate score
+        const questionDetails = questionsResult.rows.map(question => {
+            const studentAnswer = answers[question.id] || '';
             let correctAnswer;
             
             try {
@@ -262,36 +276,34 @@ const submitQuiz = async (req, res) => {
                 correctAnswer = question.correct_answers;
             }
 
-            if (Array.isArray(correctAnswer) && 
-                studentAnswer && 
-                correctAnswer.some(ans => ans.toLowerCase().trim() === studentAnswer.toLowerCase().trim())) {
-                correctAnswers++;
-            }
+            const isCorrect = Array.isArray(correctAnswer) && 
+                correctAnswer.some(ans => 
+                    ans.toLowerCase().trim() === studentAnswer.toLowerCase().trim()
+                );
+
+            if (isCorrect) correctAnswers++;
+
+            return {
+                question: question.question_text,
+                type: question.question_type,
+                studentAnswer,
+                correctAnswer: Array.isArray(correctAnswer) ? correctAnswer[0] : correctAnswer,
+                isCorrect
+            };
         });
 
         const score = (correctAnswers / totalQuestions) * 100;
 
-        const questionDetails = questionsResult.rows.map(question => ({
-            question: question.question_text,
-            type: question.question_type,
-            studentAnswer: answers[question.id] || '',
-            correctAnswer: Array.isArray(question.correct_answers) ? 
-                question.correct_answers[0] : 
-                question.correct_answers,
-            isCorrect: Array.isArray(question.correct_answers) && 
-                question.correct_answers.some(ans => 
-                    ans.toLowerCase().trim() === (answers[question.id] || '').toLowerCase().trim()
-                )
-        }));
-
-        // Save quiz result with forced submission flag
+        // Save quiz result
         await pool.query(
             "INSERT INTO quiz_results (student_id, quiz_id, score, forced_submission) VALUES ($1, $2, $3, $4)",
             [studentId, id, score, forcedSubmission || false]
         );
 
         res.status(200).json({ 
-            message: forcedSubmission ? "Quiz submitted automatically due to multiple warnings" : "Quiz submitted successfully", 
+            message: forcedSubmission ? 
+                "Quiz submitted automatically due to multiple warnings" : 
+                "Quiz submitted successfully",
             score,
             correctAnswers,
             totalQuestions,
@@ -300,7 +312,10 @@ const submitQuiz = async (req, res) => {
         });
     } catch (error) {
         console.error("Error submitting quiz:", error);
-        res.status(500).json({ message: "Error submitting quiz" });
+        res.status(500).json({ 
+            message: "Error submitting quiz",
+            error: error.message 
+        });
     }
 };
 
