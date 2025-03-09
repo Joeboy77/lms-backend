@@ -296,8 +296,17 @@ const submitQuiz = async (req, res) => {
 
         // Save quiz result
         await pool.query(
-            "INSERT INTO quiz_results (student_id, quiz_id, score, forced_submission) VALUES ($1, $2, $3, $4)",
-            [studentId, id, score, forcedSubmission || false]
+            `INSERT INTO quiz_results 
+            (student_id, quiz_id, score, correct_answers, total_questions, forced_submission) 
+            VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+                studentId, 
+                id, 
+                score, 
+                correctAnswers,
+                totalQuestions,
+                forcedSubmission || false
+            ]
         );
 
         res.status(200).json({ 

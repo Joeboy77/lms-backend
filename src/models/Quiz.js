@@ -43,4 +43,30 @@ const createQuizTables = async () => {
   console.log("Quiz tables created");
 };
 
-module.exports = { createQuizTables };
+const alterQuizResultsTable = async () => {
+  try {
+    // Add forced_submission column if it doesn't exist
+    await pool.query(`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name='quiz_results' AND column_name='forced_submission'
+        ) THEN 
+          ALTER TABLE quiz_results 
+          ADD COLUMN forced_submission BOOLEAN DEFAULT false;
+        END IF;
+      END $$;
+    `);
+    console.log("Quiz results table updated successfully");
+  } catch (error) {
+    console.error("Error updating quiz_results table:", error);
+    throw error;
+  }
+};
+
+module.exports = {
+  createQuizTables,
+  alterQuizResultsTable
+};
