@@ -237,7 +237,7 @@ const createQuizTables = async () => {
 const submitQuiz = async (req, res) => {
     try {
         const { id } = req.params;
-        const { answers } = req.body;
+        const { answers, forcedSubmission } = req.body;
         const studentId = req.user.id;
 
         // Fetch quiz questions with correct answers
@@ -284,18 +284,19 @@ const submitQuiz = async (req, res) => {
                 )
         }));
 
-        // Save quiz result with correct schema
+        // Save quiz result with forced submission flag
         await pool.query(
-            "INSERT INTO quiz_results (student_id, quiz_id, score) VALUES ($1, $2, $3)",
-            [studentId, id, score]
+            "INSERT INTO quiz_results (student_id, quiz_id, score, forced_submission) VALUES ($1, $2, $3, $4)",
+            [studentId, id, score, forcedSubmission || false]
         );
 
         res.status(200).json({ 
-            message: "Quiz submitted successfully", 
+            message: forcedSubmission ? "Quiz submitted automatically due to multiple warnings" : "Quiz submitted successfully", 
             score,
             correctAnswers,
             totalQuestions,
-            questionDetails
+            questionDetails,
+            forcedSubmission: forcedSubmission || false
         });
     } catch (error) {
         console.error("Error submitting quiz:", error);
